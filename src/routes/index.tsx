@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -192,7 +193,7 @@ function WhatsAppButton({
   variant = "default",
 }: {
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
   variant?: "default" | "outline" | "hero" | "soft";
 }) {
   return (
