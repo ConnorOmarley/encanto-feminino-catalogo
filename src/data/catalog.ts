@@ -65,7 +65,7 @@ export const products: Product[] = productData.map((product) => {
 export function whatsappUrl(
   product?: Product,
   variant?: ProductVariant,
-  whatsapp = brand.whatsapp,
+  whatsapp: string = brand.whatsapp,
 ) {
   const message = product
     ? productMessage(product, variant)

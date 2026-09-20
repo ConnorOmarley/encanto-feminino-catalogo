@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Lock, Mail } from "lucide-react";
+import { Lock, LogOut, Mail, Pencil, Plus, Search, Settings } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import type { Session } from "@supabase/supabase-js";
 import { VariantEditor } from "@/components/variant-editor";
@@ -64,12 +64,27 @@ function Admin() {
   const [colorText, setColorText] = useState("");
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
+  const [adminSearch, setAdminSearch] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loaded, setLoaded] = useState(false);
   const userId = session?.user.id;
   const loginView = Boolean(supabase) && !checking && !session;
+  const visibleCount = items.filter((p) => p.visible).length;
+  const disponivelCount = items.filter(
+    (p) => p.visible && productAvailability(p) === "disponivel",
+  ).length;
+  const encomendaCount = items.filter(
+    (p) => p.visible && productAvailability(p) === "encomenda",
+  ).length;
+  const hiddenCount = items.length - visibleCount;
+  const normalize = (text: string) =>
+    text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("pt-BR");
+  const filteredItems = items.filter((p) => normalize(p.name).includes(normalize(adminSearch)));
 
   useEffect(() => {
     if (!supabase) return;
@@ -289,11 +304,12 @@ function Admin() {
   return (
     <main className={loginView ? "admin-page admin-login-standalone" : "admin-page"}>
       <header className="admin-header">
-        <a href="/" className="font-display text-3xl">
-          {brand.name}
+        <a href="/" className="admin-brand">
+          <img src={brand.logo} alt="" width={40} height={40} className="admin-brand-logo" />
+          <span className="font-display text-2xl">{brand.name}</span>
         </a>
-        <a href="/" className="underline">
-          Ver catálogo
+        <a href="/" className="admin-header-link">
+          Ver catálogo →
         </a>
       </header>
       <div className="admin-content">
@@ -364,21 +380,70 @@ function Admin() {
           </form>
         ) : (
           <>
-            <div className="mb-6 flex flex-wrap items-center gap-3">
-              <span className="mr-auto break-all text-sm">{session.user.email}</span>
-              <Button variant="outline" disabled={busy} onClick={logout}>
-                Sair
-              </Button>
-              {allowed && loaded && !draft && !brandDraft && (
-                <>
-                  <Button onClick={() => edit(emptyDraft)}>Adicionar produto</Button>
-                  <Button variant="outline" onClick={() => void editBrand()}>
-                    Ajustes da marca
-                  </Button>
-                </>
-              )}
+            <div className="admin-topbar">
+              <div className="admin-user">
+                <span className="admin-avatar">{session.user.email?.charAt(0).toUpperCase()}</span>
+                <span className="break-all text-sm">{session.user.email}</span>
+              </div>
+              <div className="admin-topbar-actions">
+                <Button variant="outline" disabled={busy} onClick={logout}>
+                  <LogOut className="size-4" aria-hidden="true" />
+                  Sair
+                </Button>
+                {allowed && loaded && !draft && !brandDraft && (
+                  <>
+                    <Button onClick={() => edit(emptyDraft)}>
+                      <Plus className="size-4" aria-hidden="true" />
+                      Adicionar produto
+                    </Button>
+                    <Button variant="outline" onClick={() => void editBrand()}>
+                      <Settings className="size-4" aria-hidden="true" />
+                      Ajustes da marca
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
             {allowed && !loaded && !error && <p role="status">Carregando produtos…</p>}
+            {allowed && loaded && !draft && !brandDraft && (
+              <>
+                <div className="admin-stats">
+                  <div className="admin-stat">
+                    <span className="admin-stat-value">{visibleCount}</span>
+                    <span className="admin-stat-label">No catálogo</span>
+                  </div>
+                  <div className="admin-stat">
+                    <span className="admin-stat-value">{disponivelCount}</span>
+                    <span className="admin-stat-label">Disponíveis</span>
+                  </div>
+                  <div className="admin-stat">
+                    <span className="admin-stat-value">{encomendaCount}</span>
+                    <span className="admin-stat-label">Sob encomenda</span>
+                  </div>
+                  <div className="admin-stat">
+                    <span className="admin-stat-value">{hiddenCount}</span>
+                    <span className="admin-stat-label">Ocultos</span>
+                  </div>
+                </div>
+                <div className="admin-list-header">
+                  {items.length > 0 && (
+                    <label className="admin-search">
+                      <Search className="size-4" aria-hidden="true" />
+                      <span className="sr-only">Buscar produto</span>
+                      <input
+                        type="search"
+                        placeholder="Buscar produto…"
+                        value={adminSearch}
+                        onChange={(e) => setAdminSearch(e.target.value)}
+                      />
+                    </label>
+                  )}
+                  <span className="admin-list-count" role="status">
+                    {filteredItems.length} {filteredItems.length === 1 ? "produto" : "produtos"}
+                  </span>
+                </div>
+              </>
+            )}
             {allowed && draft && (
               <form className="admin-box admin-form" onSubmit={save}>
                 <h2 className="font-display text-3xl">
@@ -670,31 +735,52 @@ function Admin() {
             )}
             {allowed && loaded && !draft && !brandDraft && (
               <div className="admin-list">
-                {items.length === 0 ? (
-                  <p>Seu catálogo está vazio. Adicione o primeiro produto.</p>
+                {filteredItems.length === 0 ? (
+                  <p>
+                    {adminSearch
+                      ? "Nenhum produto com essa busca."
+                      : "Seu catálogo está vazio. Adicione o primeiro produto."}
+                  </p>
                 ) : (
-                  items.map((product) => (
-                    <article key={product.id} className="admin-product">
-                      <img src={product.image} alt="" loading="lazy" />
-                      <div className="min-w-0 flex-1">
-                        <h2 className="font-display text-2xl">{product.name}</h2>
-                        <p className="mt-1 text-sm">
-                          {formatPrice(product.price)} ·{" "}
-                          {availabilityLabels[productAvailability(product)]}
-                        </p>
-                        {!product.visible && (
-                          <p className="mt-1 text-sm text-muted-foreground">Oculto no catálogo</p>
-                        )}
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => edit(product)}
-                        aria-label={`Editar ${product.name}`}
-                      >
-                        Editar
-                      </Button>
-                    </article>
-                  ))
+                  filteredItems.map((product) => {
+                    const availability = productAvailability(product);
+                    return (
+                      <article key={product.id} className="admin-product">
+                        <div className="admin-thumb">
+                          <img src={product.image} alt="" loading="lazy" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="admin-product-title">
+                            <h2 className="font-display text-2xl">{product.name}</h2>
+                            <span className="admin-category-chip">
+                              {categories[product.category]}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {formatPrice(product.price)} / {product.unit}
+                          </p>
+                          <span
+                            className={
+                              product.visible
+                                ? `admin-status admin-status-${availability}`
+                                : "admin-status admin-status-hidden"
+                            }
+                          >
+                            {!product.visible ? "Oculto" : availabilityLabels[availability]}
+                          </span>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="btn-admin-edit"
+                          onClick={() => edit(product)}
+                          aria-label={`Editar ${product.name}`}
+                        >
+                          <Pencil className="size-4" aria-hidden="true" />
+                          Editar
+                        </Button>
+                      </article>
+                    );
+                  })
                 )}
               </div>
             )}
