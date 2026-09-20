@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Lock, Mail } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import type { Session } from "@supabase/supabase-js";
 import { VariantEditor } from "@/components/variant-editor";
@@ -68,6 +69,7 @@ function Admin() {
   const [notice, setNotice] = useState("");
   const [loaded, setLoaded] = useState(false);
   const userId = session?.user.id;
+  const loginView = Boolean(supabase) && !checking && !session;
 
   useEffect(() => {
     if (!supabase) return;
@@ -285,7 +287,7 @@ function Admin() {
   }
 
   return (
-    <main className="admin-page">
+    <main className={loginView ? "admin-page admin-login-standalone" : "admin-page"}>
       <header className="admin-header">
         <a href="/" className="font-display text-3xl">
           {brand.name}
@@ -314,30 +316,49 @@ function Admin() {
           <p role="status">Verificando acesso…</p>
         ) : !session ? (
           <form onSubmit={login} className="admin-box admin-login">
-            <h2 className="font-display text-3xl">Entre para gerenciar</h2>
+            <img
+              src={brand.logo}
+              alt={`Logo ${brand.name}`}
+              width={72}
+              height={72}
+              className="admin-login-logo"
+            />
+            <h2 className="font-display text-3xl">Painel da loja</h2>
+            <p className="admin-login-subtitle">
+              Entre com a sua conta de administradora para cuidar do catálogo.
+            </p>
             <label>
               E-mail
-              <input
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              <span className="admin-input-icon">
+                <Mail className="size-4" aria-hidden="true" />
+                <input
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </span>
             </label>
             <label>
               Senha
-              <input
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <span className="admin-input-icon">
+                <Lock className="size-4" aria-hidden="true" />
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </span>
             </label>
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy} className="admin-login-button">
               {busy ? "Entrando…" : "Entrar"}
             </Button>
+            <a href="/" className="admin-login-back">
+              Voltar ao catálogo público
+            </a>
           </form>
         ) : (
           <>

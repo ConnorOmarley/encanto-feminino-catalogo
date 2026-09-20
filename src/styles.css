@@ -488,7 +488,79 @@
   padding: 28px;
 }
 .admin-login {
-  max-width: 460px;
+  max-width: 420px;
+  width: 100%;
+}
+.admin-login-standalone {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.admin-login-standalone .admin-header {
+  display: none;
+}
+.admin-login-standalone .admin-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  margin: 0;
+  width: 100%;
+  padding: 24px 20px;
+}
+.admin-login-standalone .admin-content > h1,
+.admin-login-standalone .admin-content > p {
+  display: none;
+}
+.admin-login-standalone .admin-error,
+.admin-login-standalone .admin-notice {
+  max-width: 420px;
+  width: 100%;
+}
+.admin-login-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+.admin-login h2 {
+  text-align: center;
+}
+.admin-login-subtitle {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+}
+.admin-input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.admin-input-icon svg {
+  position: absolute;
+  left: 12px;
+  color: var(--muted-foreground);
+  pointer-events: none;
+}
+.admin-input-icon input {
+  padding-left: 40px;
+}
+.admin-login-button {
+  margin-top: 4px;
+}
+.admin-login-back {
+  display: block;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted-foreground);
+}
+.admin-login-back:hover {
+  color: var(--foreground);
 }
 .admin-box label {
   display: flex;
