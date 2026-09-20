@@ -1,4 +1,5 @@
 import productData from "./products.json";
+import { productMessage, type ProductVariant } from "../lib/product-options";
 
 export const brand = {
   name: "Encanto Feminino",
@@ -33,6 +34,9 @@ export type Product = {
   unit: string;
   description: string;
   image: string;
+  images?: string[];
+  variants?: ProductVariant[];
+  lead_time?: string;
   sizes: string[];
   colors: string[];
   availability: Availability;
@@ -51,9 +55,9 @@ export const products: Product[] = productData.map((product) => {
   return product as Product;
 });
 
-export function whatsappUrl(product?: Product) {
+export function whatsappUrl(product?: Product, variant?: ProductVariant) {
   const message = product
-    ? `Olá! Vim pelo site Encanto Feminino e tenho interesse em ${product.name}. Gostaria de confirmar ${product.availability === "encomenda" ? "o prazo da encomenda" : "a disponibilidade"}, as opções e o valor.`
+    ? productMessage(product, variant)
     : "Olá! Vim pelo site Encanto Feminino e gostaria de saber mais sobre os produtos.";
   return `https://wa.me/${brand.whatsapp}?text=${encodeURIComponent(message)}`;
 }

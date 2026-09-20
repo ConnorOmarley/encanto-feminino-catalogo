@@ -1,0 +1,74 @@
+{
+  "/catalog/product-1.png": {
+    "src": "/catalog/optimized/product-1-960.webp",
+    "srcSet": "/catalog/optimized/product-1-480.webp 480w, /catalog/optimized/product-1-960.webp 960w",
+    "width": 1402,
+    "height": 1122
+  },
+  "/catalog/product-10.webp": {
+    "src": "/catalog/optimized/product-10-960.webp",
+    "srcSet": "/catalog/optimized/product-10-480.webp 480w, /catalog/optimized/product-10-960.webp 865w",
+    "width": 865,
+    "height": 1200
+  },
+  "/catalog/product-11.jpg": {
+    "src": "/catalog/optimized/product-11-960.webp",
+    "srcSet": "/catalog/optimized/product-11-480.webp 480w, /catalog/optimized/product-11-960.webp 720w",
+    "width": 720,
+    "height": 1280
+  },
+  "/catalog/product-12.jpg": {
+    "src": "/catalog/optimized/product-12-960.webp",
+    "srcSet": "/catalog/optimized/product-12-480.webp 480w, /catalog/optimized/product-12-960.webp 960w",
+    "width": 1086,
+    "height": 1448
+  },
+  "/catalog/product-2.webp": {
+    "src": "/catalog/optimized/product-2-960.webp",
+    "srcSet": "/catalog/optimized/product-2-480.webp 480w, /catalog/optimized/product-2-960.webp 800w",
+    "width": 800,
+    "height": 1200
+  },
+  "/catalog/product-3.webp": {
+    "src": "/catalog/optimized/product-3-960.webp",
+    "srcSet": "/catalog/optimized/product-3-480.webp 480w, /catalog/optimized/product-3-960.webp 960w",
+    "width": 1024,
+    "height": 1280
+  },
+  "/catalog/product-4.webp": {
+    "src": "/catalog/optimized/product-4-960.webp",
+    "srcSet": "/catalog/optimized/product-4-480.webp 480w, /catalog/optimized/product-4-960.webp 960w",
+    "width": 1160,
+    "height": 1500
+  },
+  "/catalog/product-5.webp": {
+    "src": "/catalog/optimized/product-5-960.webp",
+    "srcSet": "/catalog/optimized/product-5-480.webp 480w, /catalog/optimized/product-5-960.webp 960w",
+    "width": 1200,
+    "height": 1200
+  },
+  "/catalog/product-6.jpg": {
+    "src": "/catalog/optimized/product-6-960.webp",
+    "srcSet": "/catalog/optimized/product-6-480.webp 480w, /catalog/optimized/product-6-960.webp 960w",
+    "width": 960,
+    "height": 1280
+  },
+  "/catalog/product-7.jpg": {
+    "src": "/catalog/optimized/product-7-960.webp",
+    "srcSet": "/catalog/optimized/product-7-480.webp 480w, /catalog/optimized/product-7-960.webp 960w",
+    "width": 1024,
+    "height": 1024
+  },
+  "/catalog/product-8.webp": {
+    "src": "/catalog/optimized/product-8-960.webp",
+    "srcSet": "/catalog/optimized/product-8-480.webp 480w, /catalog/optimized/product-8-960.webp 960w",
+    "width": 1024,
+    "height": 1024
+  },
+  "/catalog/product-9.webp": {
+    "src": "/catalog/optimized/product-9-960.webp",
+    "srcSet": "/catalog/optimized/product-9-480.webp 480w, /catalog/optimized/product-9-960.webp 500w",
+    "width": 500,
+    "height": 500
+  }
+}

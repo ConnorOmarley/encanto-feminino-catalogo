@@ -1,4 +1,7 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { ProductDialog } from "@/components/product-dialog";
+import { ProductPhoto } from "@/components/product-photo";
+import { parseProductId, productAvailability } from "@/lib/product-options";
 import { useQuery } from "@tanstack/react-query";
 import {
   brand,
@@ -29,13 +32,10 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  Star,
+  ZoomIn,
 } from "lucide-react";
 
 const heroImage = "/catalog/product-2.webp";
-const lookVestido = "/catalog/product-1.png";
-const lookConjunto = "/catalog/product-3.webp";
-const lookBlusa = "/catalog/product-4.webp";
 import { Button } from "@/components/ui/button";
 
 const WHATSAPP_NUMBER = "5511999999999";
@@ -46,7 +46,7 @@ const trustItems = [
   { icon: HandHeart, label: "Curadoria cuidadosa" },
   { icon: HeartHandshake, label: "Atendimento humano" },
   { icon: PackageCheck, label: "Peças selecionadas" },
-  { icon: Clock3, label: "Envio ágil" },
+  { icon: Clock3, label: "Prazo combinado" },
 ];
 
 const highlights = [
@@ -80,26 +80,7 @@ const steps = [
   "Receba em casa",
 ];
 
-const testimonials = [
-  {
-    name: "Larissa M.",
-    photo: lookVestido,
-    item: "Vestido Rosé Atelier",
-    text: "Fui atendida com muita atenção, consegui acertar o tamanho e a peça chegou linda.",
-  },
-  {
-    name: "Camila R.",
-    photo: lookConjunto,
-    item: "Conjunto Nude Essenza",
-    text: "A experiência foi super próxima e elegante. Parecia atendimento de boutique mesmo.",
-  },
-  {
-    name: "Juliana S.",
-    photo: lookBlusa,
-    item: "Blusa Vinho Première",
-    text: "Tirei todas as dúvidas pelo WhatsApp e finalizei rapidinho. Atendimento impecável.",
-  },
-];
+// Testimonials remain hidden until the client supplies genuine reviews.
 
 const faqs = [
   {
@@ -124,6 +105,9 @@ const faqs = [
 ];
 
 export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): { produto?: number } => ({
+    produto: parseProductId(search.produto),
+  }),
   head: () => ({
     meta: [
       { title: "Encanto Feminino | Boutique Feminina no WhatsApp" },
@@ -178,6 +162,22 @@ function WhatsAppButton({
 }
 
 function Index() {
+  const { produto: selectedId } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const lastTrigger = useRef<HTMLElement | null>(null);
+  const openProduct = (id: number, trigger: HTMLElement) => {
+    lastTrigger.current = trigger;
+    void navigate({ search: { produto: id }, resetScroll: false });
+  };
+  const closeProduct = () => {
+    void navigate({ search: {}, replace: true, resetScroll: false });
+  };
+  const restoreFocus = () => {
+    const target = lastTrigger.current?.isConnected
+      ? lastTrigger.current
+      : document.getElementById("colecao");
+    target?.focus({ preventScroll: true });
+  };
   const [category, setCategory] = useState<Category>("todos");
   const [availability, setAvailability] = useState<Availability | "todos">("todos");
   const [search, setSearch] = useState("");
@@ -198,9 +198,10 @@ function Index() {
     enabled: Boolean(supabase),
     refetchInterval: 30000,
   });
-  const products = (
-    supabase ? (catalog.isError ? [] : (catalog.data ?? [])) : initialProducts
-  ).filter((product) => product.visible);
+  const products = (supabase ? (catalog.isError ? [] : (catalog.data ?? [])) : initialProducts)
+    .filter((product) => product.visible)
+    .map((product) => ({ ...product, availability: productAvailability(product) }));
+  const selectedProduct = products.find((product) => product.id === selectedId);
   const filteredProducts = products.filter(
     (product) =>
       (category === "todos" || product.category === category) &&
@@ -211,6 +212,22 @@ function Index() {
   const hasFilters = category !== "todos" || availability !== "todos" || Boolean(search);
   return (
     <main className="bg-background text-foreground">
+      {selectedProduct && (
+        <ProductDialog
+          key={selectedProduct.id}
+          product={selectedProduct}
+          onClose={closeProduct}
+          returnFocus={restoreFocus}
+        />
+      )}
+      {selectedId && catalogReady && !selectedProduct && (
+        <div className="missing-product" role="alert">
+          <p>Este produto não está mais no catálogo.</p>
+          <Button variant="outline" onClick={closeProduct}>
+            Ver coleção completa
+          </Button>
+        </div>
+      )}
       <a href="#colecao" className="skip-to-catalog">
         Pular para a coleção
       </a>
@@ -246,9 +263,6 @@ function Index() {
             </a>
             <a href="#como-comprar" className="transition-colors hover:text-foreground">
               Como Comprar
-            </a>
-            <a href="#depoimentos" className="transition-colors hover:text-foreground">
-              Depoimentos
             </a>
             <a href="#faq" className="transition-colors hover:text-foreground">
               FAQ
@@ -337,11 +351,11 @@ function Index() {
 
           <div className="order-1 lg:order-2">
             <div className="hero-visual">
-              <img
+              <ProductPhoto
+                eager
+                sizes="(max-width: 1023px) 100vw, 600px"
                 src={heroImage}
                 alt="Camisola de renda da Encanto Feminino"
-                width={1536}
-                height={1920}
                 className="h-full w-full object-cover"
               />
               <div className="hero-note hero-note-top">
@@ -392,7 +406,7 @@ function Index() {
         </div>
       </section>
 
-      <section id="colecao" className="section-shell section-collection">
+      <section id="colecao" tabIndex={-1} className="section-shell section-collection">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
@@ -507,21 +521,34 @@ function Index() {
                   <span className={`stock-label stock-${product.availability}`}>
                     {availabilityLabels[product.availability]}
                   </span>
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    width={1200}
-                    height={1504}
-                    loading="lazy"
-                    className="product-image collection-product-photo"
-                  />
+                  <button
+                    type="button"
+                    className="product-photo-button"
+                    aria-label={`Ver fotos e opções de ${product.name}`}
+                    onClick={(event) => openProduct(product.id, event.currentTarget)}
+                  >
+                    <ProductPhoto
+                      src={product.image}
+                      alt={product.name}
+                      className="product-image collection-product-photo"
+                    />
+                    <span className="photo-zoom-hint">
+                      <ZoomIn className="size-4" aria-hidden="true" />
+                      Ver fotos
+                    </span>
+                  </button>
                 </div>
                 <div className="flex flex-1 flex-col p-6">
                   <p className="text-xs uppercase tracking-[0.28em] text-accent-foreground/70">
                     {categories[product.category]}
                   </p>
                   <h3 className="mt-3 font-display text-3xl leading-none text-foreground">
-                    {product.name}
+                    <button
+                      className="text-left hover:text-primary"
+                      onClick={(event) => openProduct(product.id, event.currentTarget)}
+                    >
+                      {product.name}
+                    </button>
                   </h3>
                   <details className="product-details">
                     <summary>
@@ -558,6 +585,15 @@ function Index() {
                     <Button className="mt-6 w-full" size="lg" disabled>
                       Indisponível no momento
                     </Button>
+                  ) : product.variants?.length ? (
+                    <Button
+                      className="mt-6 w-full"
+                      variant="outline"
+                      size="lg"
+                      onClick={(event) => openProduct(product.id, event.currentTarget)}
+                    >
+                      Escolher tamanho e cor
+                    </Button>
                   ) : (
                     <WhatsAppButton product={product} className="mt-6 w-full" variant="outline">
                       {product.availability === "encomenda"
@@ -565,6 +601,12 @@ function Index() {
                         : "Pedir no WhatsApp"}
                     </WhatsAppButton>
                   )}
+                  <button
+                    className="mt-3 min-h-11 text-sm text-muted-foreground underline underline-offset-4 hover:text-primary"
+                    onClick={(event) => openProduct(product.id, event.currentTarget)}
+                  >
+                    Ver detalhes e compartilhar
+                  </button>
                 </div>
               </article>
             ))}
@@ -592,46 +634,6 @@ function Index() {
 
           <div className="mt-10 flex justify-center">
             <WhatsAppButton>Falar com a boutique</WhatsAppButton>
-          </div>
-        </div>
-      </section>
-
-      <section id="depoimentos" className="section-shell section-testimonials">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="section-kicker section-kicker-center">
-              Depoimentos · exemplos do modelo
-            </span>
-            <h2 className="mt-4 font-display text-4xl leading-tight text-foreground sm:text-5xl">
-              Experiências que reforçam confiança antes mesmo da compra.
-            </h2>
-          </div>
-
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
-            {testimonials.map((item) => (
-              <article key={item.name} className="testimonial-card">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={item.photo}
-                    alt={item.name}
-                    width={1200}
-                    height={1504}
-                    loading="lazy"
-                    className="h-14 w-14 rounded-full object-cover"
-                  />
-                  <div>
-                    <h3 className="text-base font-medium text-foreground">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">{item.item}</p>
-                  </div>
-                </div>
-                <div className="mt-5 flex gap-1 text-primary">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <Star key={index} className="size-4 fill-current" />
-                  ))}
-                </div>
-                <p className="mt-5 text-sm leading-7 text-muted-foreground">“{item.text}”</p>
-              </article>
-            ))}
           </div>
         </div>
       </section>
@@ -699,7 +701,6 @@ function Index() {
             <div className="mt-4 flex flex-col gap-3 text-sm text-foreground">
               <a href="#colecao">Coleção</a>
               <a href="#como-comprar">Como comprar</a>
-              <a href="#depoimentos">Depoimentos</a>
               <a href="#faq">FAQ</a>
             </div>
           </div>

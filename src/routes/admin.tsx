@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import type { Session } from "@supabase/supabase-js";
+import { VariantEditor } from "@/components/variant-editor";
+import { productAvailability, productPhotos, validateVariants } from "@/lib/product-options";
 import { Button } from "@/components/ui/button";
 import { availabilityLabels, brand, categories, formatPrice, type Product } from "@/data/catalog";
 import { fetchProducts, saveProduct, supabase, uploadPhoto } from "@/lib/catalog-api";
@@ -27,6 +29,9 @@ const emptyDraft: Draft = {
   colors: [],
   availability: "encomenda",
   visible: true,
+  images: [],
+  variants: [],
+  lead_time: "",
 };
 
 function Admin() {
@@ -39,6 +44,7 @@ function Admin() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [sizeText, setSizeText] = useState("");
   const [colorText, setColorText] = useState("");
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
   const [photo, setPhoto] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -125,10 +131,16 @@ function Admin() {
   }
 
   function edit(product: Draft) {
-    setDraft({ ...product });
+    setDraft({
+      ...product,
+      images: product.images ?? [],
+      variants: product.variants ?? [],
+      lead_time: product.lead_time ?? "",
+    });
     setSizeText(product.sizes.join(", "));
     setColorText(product.colors.join(", "));
     setPhoto(null);
+    setGalleryFiles([]);
     setError("");
     setNotice("");
   }
@@ -143,15 +155,31 @@ function Admin() {
       if (!draft.name.trim() || !Number.isFinite(draft.price) || draft.price < 0)
         throw new Error("Informe um nome e um preço válido.");
       if (!draft.image && !photo) throw new Error("Adicione uma foto do produto.");
-      const image = photo ? await uploadPhoto(photo) : draft.image;
+      validateVariants(draft.variants ?? []);
+      if (productPhotos(draft).length + galleryFiles.length + (!draft.image && photo ? 1 : 0) > 8)
+        throw new Error("Use até 8 fotos por produto.");
+      for (const file of [photo, ...galleryFiles].filter((file): file is File => Boolean(file))) {
+        if (
+          !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+          file.size > 5 * 1024 * 1024
+        )
+          throw new Error("Cada foto deve ser JPG, PNG ou WebP de até 5 MB.");
+      }
+      let preparedDraft = { ...draft, images: [...(draft.images ?? [])] };
       if (photo) {
-        setDraft({ ...draft, image });
+        preparedDraft = { ...preparedDraft, image: await uploadPhoto(photo) };
+        setDraft(preparedDraft);
         setPhoto(null);
       }
+      for (let index = 0; index < galleryFiles.length; index++) {
+        const url = await uploadPhoto(galleryFiles[index]);
+        preparedDraft = { ...preparedDraft, images: [...preparedDraft.images, url] };
+        setDraft(preparedDraft);
+        setGalleryFiles(galleryFiles.slice(index + 1));
+      }
       const saved = await saveProduct({
-        ...draft,
+        ...preparedDraft,
         name: draft.name.trim(),
-        image,
         sizes: sizeText
           .split(",")
           .map((s) => s.trim())
@@ -292,7 +320,8 @@ function Admin() {
                     <label>
                       Disponibilidade
                       <select
-                        value={draft.availability}
+                        disabled={Boolean(draft.variants?.length)}
+                        value={productAvailability(draft)}
                         onChange={(e) =>
                           setDraft({
                             ...draft,
@@ -340,7 +369,16 @@ function Admin() {
                     />
                   </label>
                   <label>
-                    Foto do produto
+                    Prazo para encomendas (opcional)
+                    <input
+                      maxLength={160}
+                      placeholder="Informe somente o prazo confirmado pela loja"
+                      value={draft.lead_time ?? ""}
+                      onChange={(event) => setDraft({ ...draft, lead_time: event.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Foto principal do produto
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -350,17 +388,87 @@ function Admin() {
                       JPG, PNG ou WebP, até 5 MB. A nova foto substitui a atual ao salvar.
                     </span>
                   </label>
-                  {draft.image && (
-                    <img
-                      className="admin-photo-preview"
-                      src={draft.image}
-                      alt={`Foto atual: ${draft.name}`}
+                  <div className="admin-gallery">
+                    {productPhotos(draft).map((image, index) => (
+                      <div key={image}>
+                        <img
+                          src={image}
+                          alt={`Foto ${index + 1} de ${draft.name}`}
+                          loading="lazy"
+                        />
+                        <span className="text-xs">
+                          {image === draft.image ? "Foto principal" : `Foto ${index + 1}`}
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {image !== draft.image && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setDraft({
+                                  ...draft,
+                                  image,
+                                  images: productPhotos(draft).filter((url) => url !== image),
+                                })
+                              }
+                            >
+                              Usar como principal
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Remover foto ${index + 1}`}
+                            onClick={() => {
+                              const remaining = productPhotos(draft).filter((url) => url !== image);
+                              setDraft({
+                                ...draft,
+                                image: remaining[0] ?? "",
+                                images: remaining.slice(1),
+                              });
+                            }}
+                          >
+                            Remover
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <label>
+                    Adicionar fotos à galeria
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) => setGalleryFiles(Array.from(event.target.files ?? []))}
                     />
+                    <span className="text-xs font-normal text-muted-foreground">
+                      Até 8 fotos no total. As fotos novas serão adicionadas ao salvar.
+                    </span>
+                  </label>
+                  {galleryFiles.length > 0 && (
+                    <p className="text-sm" role="status">
+                      {galleryFiles.length}{" "}
+                      {galleryFiles.length === 1 ? "foto selecionada" : "fotos selecionadas"}:{" "}
+                      {galleryFiles.map((file) => file.name).join(", ")}
+                    </p>
                   )}
+                  <VariantEditor
+                    value={draft.variants ?? []}
+                    onChange={(variants) => setDraft({ ...draft, variants })}
+                  />
+                  <p className="mt-6 text-sm text-muted-foreground">
+                    {draft.variants?.length
+                      ? "Tamanhos e cores serão preenchidos automaticamente a partir das variações."
+                      : "Sem variações, as opções abaixo ficam disponíveis para consulta pelo WhatsApp."}
+                  </p>
                   <div className="admin-form-row">
                     <label>
                       Tamanhos, separados por vírgula
                       <input
+                        disabled={Boolean(draft.variants?.length)}
                         placeholder="P, M, G, GG"
                         value={sizeText}
                         onChange={(e) => setSizeText(e.target.value)}
@@ -369,6 +477,7 @@ function Admin() {
                     <label>
                       Cores ou opções, separadas por vírgula
                       <input
+                        disabled={Boolean(draft.variants?.length)}
                         placeholder="Rosa, Branco"
                         value={colorText}
                         onChange={(e) => setColorText(e.target.value)}
@@ -403,7 +512,8 @@ function Admin() {
                       <div className="min-w-0 flex-1">
                         <h2 className="font-display text-2xl">{product.name}</h2>
                         <p className="mt-1 text-sm">
-                          {formatPrice(product.price)} · {availabilityLabels[product.availability]}
+                          {formatPrice(product.price)} ·{" "}
+                          {availabilityLabels[productAvailability(product)]}
                         </p>
                         {!product.visible && (
                           <p className="mt-1 text-sm text-muted-foreground">Oculto no catálogo</p>
