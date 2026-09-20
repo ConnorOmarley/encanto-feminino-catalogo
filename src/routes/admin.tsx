@@ -335,6 +335,7 @@ function Admin() {
                   type="email"
                   autoComplete="username"
                   required
+                  style={{ paddingLeft: 40 }}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -348,6 +349,7 @@ function Admin() {
                   type="password"
                   autoComplete="current-password"
                   required
+                  style={{ paddingLeft: 40 }}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />

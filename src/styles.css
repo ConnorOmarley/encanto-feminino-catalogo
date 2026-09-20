@@ -546,7 +546,7 @@
   color: var(--muted-foreground);
   pointer-events: none;
 }
-.admin-input-icon input {
+.admin-login .admin-box .admin-input-icon input {
   padding-left: 40px;
 }
 .admin-login-button {
