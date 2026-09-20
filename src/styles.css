@@ -550,7 +550,8 @@
   padding-left: 40px;
 }
 .admin-login-button {
-  margin-top: 4px;
+  width: 100%;
+  margin-top: 8px;
 }
 .admin-login-back {
   display: block;
