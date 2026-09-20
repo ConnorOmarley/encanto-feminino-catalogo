@@ -490,7 +490,7 @@
 .admin-brand:hover {
   color: var(--primary);
 }
-.admin-brand-logo {
+.admin-header-logo {
   width: 40px;
   height: 40px;
   object-fit: contain;

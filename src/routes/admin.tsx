@@ -305,7 +305,7 @@ function Admin() {
     <main className={loginView ? "admin-page admin-login-standalone" : "admin-page"}>
       <header className="admin-header">
         <a href="/" className="admin-brand">
-          <img src={brand.logo} alt="" width={40} height={40} className="admin-brand-logo" />
+          <img src={brand.logo} alt="" width={40} height={40} className="admin-header-logo" />
           <span className="font-display text-2xl">{brand.name}</span>
         </a>
         <a href="/" className="admin-header-link">
