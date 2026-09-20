@@ -40,7 +40,7 @@ import { Button } from "@/components/ui/button";
 
 const WHATSAPP_NUMBER = "5511999999999";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Vim pelo site e quero atendimento personalizado para escolher minhas peças.")}`;
-const INSTAGRAM_URL = "https://instagram.com/_encantofeminino_01";
+const INSTAGRAM_URL = "https://instagram.com/encantofeminino.demo";
 
 const trustItems = [
   { icon: HandHeart, label: "Curadoria cuidadosa" },

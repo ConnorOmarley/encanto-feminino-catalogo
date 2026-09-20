@@ -7,7 +7,7 @@ export const brand = {
   socialImage:
     "/catalog/logo.svg",
   whatsapp: "5511999999999",
-  instagram: "https://www.instagram.com/_encantofeminino_01/",
+  instagram: "https://www.instagram.com/encantofeminino.demo/",
 };
 
 export const categories = {
