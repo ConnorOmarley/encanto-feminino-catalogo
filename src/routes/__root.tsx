@@ -132,6 +132,41 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  // Restaura a posição da rolagem ao recarregar a página, em todo o site.
+  useEffect(() => {
+    const scrollKey = "app:scroll";
+    const positionKey = () => `${location.pathname}${location.search}`;
+    const savePosition = () => {
+      try {
+        sessionStorage.setItem(
+          scrollKey,
+          JSON.stringify({ key: positionKey(), y: window.scrollY }),
+        );
+      } catch {
+        /* Armazenamento indisponível. */
+      }
+    };
+    window.addEventListener("beforeunload", savePosition);
+    const restorePosition = () => {
+      if (location.hash) return;
+      try {
+        const raw = sessionStorage.getItem(scrollKey);
+        if (!raw) return;
+        const saved = JSON.parse(raw) as { key?: string; y?: number };
+        if (saved.key !== positionKey() || typeof saved.y !== "number") return;
+        const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        window.scrollTo(0, Math.min(saved.y, max));
+      } catch {
+        /* Ignora restauração inválida. */
+      }
+    };
+    const timer = window.setTimeout(restorePosition, 0);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("beforeunload", savePosition);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />

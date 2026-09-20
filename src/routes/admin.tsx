@@ -49,6 +49,32 @@ const emptyDraft: Draft = {
   lead_time: "",
 };
 
+const ADMIN_VIEW_KEY = "admin:view";
+type SavedAdminView = { type: "product"; draft: Draft } | { type: "brand"; draft: BrandSettings };
+
+function saveAdminView(view: SavedAdminView | null) {
+  try {
+    if (view === null) sessionStorage.removeItem(ADMIN_VIEW_KEY);
+    else sessionStorage.setItem(ADMIN_VIEW_KEY, JSON.stringify(view));
+  } catch {
+    /* Armazenamento indisponível; a tela não será lembrada ao recarregar. */
+  }
+}
+
+function readAdminView(): SavedAdminView | null {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_VIEW_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SavedAdminView;
+    if (parsed?.type === "product" && parsed.draft && typeof parsed.draft === "object")
+      return parsed;
+    if (parsed?.type === "brand" && parsed.draft && typeof parsed.draft === "object") return parsed;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function Admin() {
   const [session, setSession] = useState<Session | null>(null);
   const [checking, setChecking] = useState(Boolean(supabase));
@@ -148,6 +174,39 @@ function Admin() {
     };
   }, [userId]);
 
+  // Mantém aberta a última tela/formulário do painel ao recarregar a página.
+  useEffect(() => {
+    setDraft(null);
+    setBrandDraft(null);
+    if (!allowed) return;
+    const saved = readAdminView();
+    if (saved?.type === "brand") {
+      setBrandDraft(saved.draft);
+      setLogoFile(null);
+      setError("");
+      setNotice("");
+    } else if (saved?.type === "product") {
+      const next = saved.draft;
+      setDraft(next);
+      setSizeText(next.sizes.join(", "));
+      setColorText(next.colors.join(", "));
+      setPhoto(null);
+      setGalleryFiles([]);
+      setError("");
+      setNotice("");
+    }
+  }, [allowed]);
+
+  // Guarda a tela/formulário em andamento antes de recarregar ou fechar a aba.
+  useEffect(() => {
+    const saveBeforeUnload = () => {
+      if (draft) saveAdminView({ type: "product", draft });
+      else if (brandDraft) saveAdminView({ type: "brand", draft: brandDraft });
+    };
+    window.addEventListener("beforeunload", saveBeforeUnload);
+    return () => window.removeEventListener("beforeunload", saveBeforeUnload);
+  }, [draft, brandDraft]);
+
   async function login(event: FormEvent) {
     event.preventDefault();
     if (!supabase) return;
@@ -165,32 +224,37 @@ function Admin() {
   }
 
   function edit(product: Draft) {
-    setDraft({
+    const next: Draft = {
       ...product,
       images: product.images ?? [],
       variants: product.variants ?? [],
       lead_time: product.lead_time ?? "",
-    });
-    setSizeText(product.sizes.join(", "));
-    setColorText(product.colors.join(", "));
+    };
+    setDraft(next);
+    setSizeText(next.sizes.join(", "));
+    setColorText(next.colors.join(", "));
     setPhoto(null);
     setGalleryFiles([]);
     setError("");
     setNotice("");
+    saveAdminView({ type: "product", draft: next });
   }
 
   async function editBrand() {
     setError("");
     setNotice("");
     const settings = await fetchBrandSettings().catch(() => ({}));
-    setBrandDraft({ ...brand, ...settings });
+    const next = { ...brand, ...settings } as BrandSettings;
+    setBrandDraft(next);
     setLogoFile(null);
+    saveAdminView({ type: "brand", draft: next });
   }
 
   function closeBrand() {
     setBrandDraft(null);
     setLogoFile(null);
     setError("");
+    saveAdminView(null);
   }
 
   async function saveBrand(event: FormEvent) {
@@ -221,6 +285,7 @@ function Admin() {
       await saveBrandSettings(prepared);
       setBrandDraft(null);
       setLogoFile(null);
+      saveAdminView(null);
       setNotice("Ajustes da marca salvos. O site já reflete as novas informações.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível salvar os ajustes.");
@@ -277,6 +342,7 @@ function Admin() {
         [...previous.filter((p) => p.id !== saved.id), saved].sort((a, b) => a.id - b.id),
       );
       setDraft(null);
+      saveAdminView(null);
       setNotice("Produto salvo. A alteração já está disponível no catálogo online.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível salvar.");
@@ -296,6 +362,7 @@ function Admin() {
       setAllowed(false);
       setItems([]);
       setDraft(null);
+      saveAdminView(null);
       setNotice("");
     }
     setBusy(false);
@@ -654,7 +721,14 @@ function Admin() {
                   </label>
                   <div className="flex flex-wrap gap-3">
                     <Button type="submit">{busy ? "Salvando…" : "Salvar produto"}</Button>
-                    <Button type="button" variant="outline" onClick={() => setDraft(null)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setDraft(null);
+                        saveAdminView(null);
+                      }}
+                    >
                       Cancelar
                     </Button>
                   </div>
