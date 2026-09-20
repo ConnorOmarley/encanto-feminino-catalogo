@@ -4,8 +4,22 @@ import type { Session } from "@supabase/supabase-js";
 import { VariantEditor } from "@/components/variant-editor";
 import { productAvailability, productPhotos, validateVariants } from "@/lib/product-options";
 import { Button } from "@/components/ui/button";
-import { availabilityLabels, brand, categories, formatPrice, type Product } from "@/data/catalog";
-import { fetchProducts, saveProduct, supabase, uploadPhoto } from "@/lib/catalog-api";
+import {
+  availabilityLabels,
+  brand,
+  categories,
+  formatPrice,
+  type BrandSettings,
+  type Product,
+} from "@/data/catalog";
+import {
+  fetchBrandSettings,
+  fetchProducts,
+  saveBrandSettings,
+  saveProduct,
+  supabase,
+  uploadPhoto,
+} from "@/lib/catalog-api";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -42,6 +56,9 @@ function Admin() {
   const [password, setPassword] = useState("");
   const [items, setItems] = useState<Product[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [brandDraft, setBrandDraft] = useState<BrandSettings | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [brandBusy, setBrandBusy] = useState(false);
   const [sizeText, setSizeText] = useState("");
   const [colorText, setColorText] = useState("");
   const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
@@ -143,6 +160,56 @@ function Admin() {
     setGalleryFiles([]);
     setError("");
     setNotice("");
+  }
+
+  async function editBrand() {
+    setError("");
+    setNotice("");
+    const settings = await fetchBrandSettings().catch(() => ({}));
+    setBrandDraft({ ...brand, ...settings });
+    setLogoFile(null);
+  }
+
+  function closeBrand() {
+    setBrandDraft(null);
+    setLogoFile(null);
+    setError("");
+  }
+
+  async function saveBrand(event: FormEvent) {
+    event.preventDefault();
+    if (!brandDraft) return;
+    setBrandBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      if (!brandDraft.name.trim() || brandDraft.name.trim().length > 60)
+        throw new Error("Informe um nome para a marca (até 60 caracteres).");
+      if (!/^\+?[0-9]{10,15}$/.test(brandDraft.whatsapp.trim()))
+        throw new Error("O WhatsApp deve ter de 10 a 15 dígitos (ex.: 5511999999999).");
+      const handle = brandDraft.instagram.replace(/^@/, "").trim();
+      if (!/^[A-Za-z0-9._]{1,30}$/.test(handle))
+        throw new Error("O Instagram deve ter até 30 letras, números, ponto ou underline.");
+      let prepared = { ...brandDraft, instagram: handle };
+      if (logoFile) {
+        if (
+          !["image/jpeg", "image/png", "image/webp"].includes(logoFile.type) ||
+          logoFile.size > 5 * 1024 * 1024
+        )
+          throw new Error("A logo deve ser JPG, PNG ou WebP de até 5 MB.");
+        prepared = { ...prepared, logo: await uploadPhoto(logoFile) };
+      } else if (!prepared.logo.trim()) {
+        throw new Error("Escolha uma logo ou mantenha a atual.");
+      }
+      await saveBrandSettings(prepared);
+      setBrandDraft(null);
+      setLogoFile(null);
+      setNotice("Ajustes da marca salvos. O site já reflete as novas informações.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível salvar os ajustes.");
+    } finally {
+      setBrandBusy(false);
+    }
   }
 
   async function save(event: FormEvent) {
@@ -279,8 +346,13 @@ function Admin() {
               <Button variant="outline" disabled={busy} onClick={logout}>
                 Sair
               </Button>
-              {allowed && loaded && !draft && (
-                <Button onClick={() => edit(emptyDraft)}>Adicionar produto</Button>
+              {allowed && loaded && !draft && !brandDraft && (
+                <>
+                  <Button onClick={() => edit(emptyDraft)}>Adicionar produto</Button>
+                  <Button variant="outline" onClick={() => void editBrand()}>
+                    Ajustes da marca
+                  </Button>
+                </>
               )}
             </div>
             {allowed && !loaded && !error && <p role="status">Carregando produtos…</p>}
@@ -501,7 +573,79 @@ function Admin() {
                 </fieldset>
               </form>
             )}
-            {allowed && loaded && !draft && (
+            {allowed && brandDraft && (
+              <form className="admin-box admin-form" onSubmit={saveBrand}>
+                <h2 className="font-display text-3xl">Ajustes da marca</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Nome, logo e contatos exibidos em todo o site. Ao salvar, o catálogo público já
+                  atualiza.
+                </p>
+                <fieldset disabled={brandBusy}>
+                  <label>
+                    Nome da marca
+                    <input
+                      required
+                      maxLength={60}
+                      value={brandDraft.name}
+                      onChange={(e) => setBrandDraft({ ...brandDraft, name: e.target.value })}
+                    />
+                  </label>
+                  <div className="admin-form-row">
+                    <label>
+                      WhatsApp (somente números)
+                      <input
+                        required
+                        inputMode="numeric"
+                        placeholder="5511999999999"
+                        value={brandDraft.whatsapp}
+                        onChange={(e) => setBrandDraft({ ...brandDraft, whatsapp: e.target.value })}
+                      />
+                      <span className="text-xs font-normal text-muted-foreground">
+                        Código do país + DDD + número, sem espaços.
+                      </span>
+                    </label>
+                    <label>
+                      Instagram (sem @)
+                      <input
+                        required
+                        maxLength={30}
+                        placeholder="encantofeminino01"
+                        value={brandDraft.instagram}
+                        onChange={(e) =>
+                          setBrandDraft({ ...brandDraft, instagram: e.target.value })
+                        }
+                      />
+                    </label>
+                  </div>
+                  {brandDraft.logo && (
+                    <div className="admin-brand-logo">
+                      <img src={brandDraft.logo} alt="Logo atual da marca" />
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        Logo atual exibida no topo e no rodapé do site.
+                      </p>
+                    </div>
+                  )}
+                  <label>
+                    Nova logo (opcional)
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+                    />
+                    <span className="text-xs font-normal text-muted-foreground">
+                      JPG, PNG ou WebP quadrada, até 5 MB. Ao escolher, substitui a atual no salvar.
+                    </span>
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    <Button type="submit">{brandBusy ? "Salvando…" : "Salvar ajustes"}</Button>
+                    <Button type="button" variant="outline" onClick={closeBrand}>
+                      Cancelar
+                    </Button>
+                  </div>
+                </fieldset>
+              </form>
+            )}
+            {allowed && loaded && !draft && !brandDraft && (
               <div className="admin-list">
                 {items.length === 0 ? (
                   <p>Seu catálogo está vazio. Adicione o primeiro produto.</p>

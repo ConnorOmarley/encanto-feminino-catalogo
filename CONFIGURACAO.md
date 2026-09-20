@@ -14,7 +14,7 @@ A página pública está em `/` e o painel da cliente em `/admin`.
 ## Conectar uma conta Supabase
 
 1. Crie ou escolha o projeto Supabase da loja.
-2. Execute `supabase/migrations/202609200001_catalog.sql` no editor SQL desse projeto. Isso cria produtos, a lista de administradoras e o armazenamento de imagens com controle de acesso.
+2. Execute `supabase/migrations/202609200001_catalog.sql` no editor SQL desse projeto. Isso cria produtos, a lista de administradoras e o armazenamento de imagens com controle de acesso. Depois execute `202609200002_product_options.sql` (tamanhos, cores, várias fotos) e `202609200003_brand_settings.sql` (nome, logo, WhatsApp e Instagram editáveis no painel).
 3. Execute `supabase/seed.sql` para importar o catálogo inicial. Ele não sobrescreve produtos com os mesmos IDs.
 4. Crie a conta da cliente em Authentication > Users usando o e-mail dela e uma senha definida de forma privada. Não existe cadastro público pelo site.
 5. Copie o UUID da conta criada e execute:
@@ -38,6 +38,7 @@ O acesso de edição depende da tabela `catalog_admins`. Uma conta autenticada q
 - “Sob encomenda”: pedido sujeito a prazo combinado.
 - “Indisponível”: permanece visível, mas sem botão de pedido.
 - “Mostrar no catálogo”: desmarcar oculta o produto.
+- “Ajustes da marca”: nome, logo, WhatsApp e Instagram exibidos no site inteiro. A logo nova é enviada como imagem e substitui a atual ao salvar. O catálogo público atualiza sozinho.
 - Fotos: JPG, PNG ou WebP de até 5 MB.
 
 ## Conferência antes da divulgação

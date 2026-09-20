@@ -7,7 +7,14 @@ export const brand = {
   socialImage:
     "/catalog/logo.svg",
   whatsapp: "5511999999999",
-  instagram: "https://www.instagram.com/encantofeminino.demo/",
+  instagram: "encantofeminino.demo",
+} as const;
+
+export type BrandSettings = {
+  name: string;
+  whatsapp: string;
+  instagram: string;
+  logo: string;
 };
 
 export const categories = {
@@ -55,11 +62,29 @@ export const products: Product[] = productData.map((product) => {
   return product as Product;
 });
 
-export function whatsappUrl(product?: Product, variant?: ProductVariant) {
+export function whatsappUrl(
+  product?: Product,
+  variant?: ProductVariant,
+  whatsapp = brand.whatsapp,
+) {
   const message = product
     ? productMessage(product, variant)
     : "Olá! Vim pelo site Encanto Feminino e gostaria de saber mais sobre os produtos.";
-  return `https://wa.me/${brand.whatsapp}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
+}
+
+export function instagramUrl(handle: string) {
+  const clean = handle.replace(/^@/, "").trim();
+  return clean ? `https://www.instagram.com/${clean}` : "";
+}
+
+export function formatWhatsapp(whatsapp: string) {
+  const digits = whatsapp.replace(/\D/g, "");
+  if (digits.length !== 13) return whatsapp;
+  const ddd = digits.slice(2, 4);
+  const number = digits.slice(4);
+  const split = number.length === 9 ? `${number.slice(0, 5)}-${number.slice(5)}` : number;
+  return `(${ddd}) ${split}`;
 }
 
 export const formatPrice = (price: number) =>

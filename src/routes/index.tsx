@@ -9,12 +9,16 @@ import {
   categories,
   availabilityLabels,
   formatPrice,
+  formatWhatsapp,
+  instagramUrl,
   whatsappUrl,
   type Product,
   type Category,
   type Availability,
 } from "@/data/catalog";
 import { fetchProducts, supabase } from "@/lib/catalog-api";
+import { useBrand } from "@/lib/use-brand";
+import { InstagramIcon, WhatsAppIcon } from "@/components/brand-icons";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -23,9 +27,7 @@ import {
   Clock3,
   HandHeart,
   HeartHandshake,
-  Instagram,
   MapPin,
-  MessageCircle,
   PackageCheck,
   Menu,
   X,
@@ -38,9 +40,8 @@ import {
 const heroImage = "/catalog/product-2.webp";
 import { Button } from "@/components/ui/button";
 
-const WHATSAPP_NUMBER = "5511999999999";
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Vim pelo site e quero atendimento personalizado para escolher minhas peças.")}`;
-const INSTAGRAM_URL = "https://instagram.com/encantofeminino.demo";
+const whatsappContactUrl = (whatsapp: string) =>
+  `https://wa.me/${whatsapp}?text=${encodeURIComponent("Olá! Vim pelo site e quero atendimento personalizado para escolher minhas peças.")}`;
 
 const trustItems = [
   { icon: HandHeart, label: "Curadoria cuidadosa" },
@@ -51,7 +52,7 @@ const trustItems = [
 
 const highlights = [
   {
-    icon: MessageCircle,
+    icon: WhatsAppIcon,
     title: "Atendimento personalizado",
     text: "Indicamos modelos, tamanhos e combinações ideais para cada cliente no WhatsApp.",
   },
@@ -145,16 +146,22 @@ function WhatsAppButton({
   children,
   variant = "default",
   product,
+  whatsapp = brand.whatsapp,
 }: {
   product?: Product;
   className?: string;
   children: ReactNode;
   variant?: "default" | "outline" | "hero" | "soft";
+  whatsapp?: string;
 }) {
   return (
     <Button asChild className={className} size="lg" variant={variant}>
-      <a href={product ? whatsappUrl(product) : WHATSAPP_URL} target="_blank" rel="noreferrer">
-        <MessageCircle />
+      <a
+        href={product ? whatsappUrl(product, undefined, whatsapp) : whatsappContactUrl(whatsapp)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <WhatsAppIcon className="size-4 shrink-0" aria-hidden="true" />
         {children}
       </a>
     </Button>
@@ -164,6 +171,7 @@ function WhatsAppButton({
 function Index() {
   const { produto: selectedId } = Route.useSearch();
   const navigate = Route.useNavigate();
+  const site = useBrand();
   const lastTrigger = useRef<HTMLElement | null>(null);
   const openProduct = (id: number, trigger: HTMLElement) => {
     lastTrigger.current = trigger;
@@ -235,15 +243,15 @@ function Index() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
           <a href="#inicio" className="flex min-w-0 items-center gap-3">
             <img
-              src={brand.logo}
-              alt="Logo Encanto Feminino"
+              src={site.logo}
+              alt={`Logo ${site.name}`}
               width={56}
               height={56}
               className="size-12 shrink-0 object-contain sm:size-14"
             />
             <span className="flex min-w-0 flex-col">
               <span className="font-display text-xl leading-none text-foreground sm:text-2xl">
-                Encanto Feminino
+                {site.name}
               </span>
               <span className="mt-1 text-xs uppercase tracking-[0.28em] text-muted-foreground">
                 Boutique feminina
@@ -269,7 +277,9 @@ function Index() {
             </a>
           </nav>
 
-          <WhatsAppButton className="hidden sm:inline-flex">WhatsApp</WhatsAppButton>
+          <WhatsAppButton className="hidden sm:inline-flex" whatsapp={site.whatsapp}>
+            WhatsApp
+          </WhatsAppButton>
           <button
             type="button"
             className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border lg:hidden"
@@ -333,7 +343,9 @@ function Index() {
                   <ArrowRight />
                 </a>
               </Button>
-              <WhatsAppButton variant="outline">Pedir pelo WhatsApp</WhatsAppButton>
+              <WhatsAppButton variant="outline" whatsapp={site.whatsapp}>
+                Pedir pelo WhatsApp
+              </WhatsAppButton>
             </div>
 
             <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -363,7 +375,7 @@ function Index() {
                 <span>Curadoria premium</span>
               </div>
               <div className="hero-note hero-note-bottom">
-                <MessageCircle />
+                <WhatsAppIcon />
                 <span>Compra guiada no WhatsApp</span>
               </div>
             </div>
@@ -415,7 +427,9 @@ function Index() {
                 Uma vitrine elegante para escolher com calma e pedir com atendimento real.
               </h2>
             </div>
-            <WhatsAppButton variant="soft">Solicitar atendimento</WhatsAppButton>
+            <WhatsAppButton variant="soft" whatsapp={site.whatsapp}>
+              Solicitar atendimento
+            </WhatsAppButton>
           </div>
 
           <div
@@ -595,7 +609,12 @@ function Index() {
                       Escolher tamanho e cor
                     </Button>
                   ) : (
-                    <WhatsAppButton product={product} className="mt-6 w-full" variant="outline">
+                    <WhatsAppButton
+                      product={product}
+                      className="mt-6 w-full"
+                      variant="outline"
+                      whatsapp={site.whatsapp}
+                    >
                       {product.availability === "encomenda"
                         ? "Consultar encomenda"
                         : "Pedir no WhatsApp"}
@@ -633,7 +652,7 @@ function Index() {
           </div>
 
           <div className="mt-10 flex justify-center">
-            <WhatsAppButton>Falar com a boutique</WhatsAppButton>
+            <WhatsAppButton whatsapp={site.whatsapp}>Falar com a boutique</WhatsAppButton>
           </div>
         </div>
       </section>
@@ -675,10 +694,12 @@ function Index() {
               </p>
             </div>
             <div className="flex flex-col gap-4 sm:flex-row">
-              <WhatsAppButton className="min-w-56">Falar no WhatsApp</WhatsAppButton>
+              <WhatsAppButton className="min-w-56" whatsapp={site.whatsapp}>
+                Falar no WhatsApp
+              </WhatsAppButton>
               <Button asChild variant="ghost" size="lg">
-                <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
-                  <Instagram />
+                <a href={instagramUrl(site.instagram)} target="_blank" rel="noreferrer">
+                  <InstagramIcon className="size-4 shrink-0" aria-hidden="true" />
                   Ver Instagram
                 </a>
               </Button>
@@ -690,7 +711,7 @@ function Index() {
       <footer className="border-t border-border/60 bg-secondary/35">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-3 lg:px-8">
           <div>
-            <p className="font-display text-3xl text-foreground">Encanto Feminino</p>
+            <p className="font-display text-3xl text-foreground">{site.name}</p>
             <p className="mt-3 max-w-sm text-sm leading-7 text-muted-foreground">
               Boutique feminina com seleção cuidadosa, estética delicada e atendimento pensado para
               converter com proximidade.
@@ -707,11 +728,23 @@ function Index() {
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Contato</p>
             <div className="mt-4 flex flex-col gap-3 text-sm text-foreground">
-              <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-                WhatsApp: (11) 99999-9999
+              <a
+                href={whatsappContactUrl(site.whatsapp)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2"
+              >
+                <WhatsAppIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                WhatsApp: {formatWhatsapp(site.whatsapp)}
               </a>
-              <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
-                Instagram: @_encantofeminino_01
+              <a
+                href={instagramUrl(site.instagram)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2"
+              >
+                <InstagramIcon className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                Instagram: @{site.instagram}
               </a>
               <span className="inline-flex items-center gap-2 text-muted-foreground">
                 <MapPin className="size-4" /> Atendimento online e sob consulta
@@ -722,13 +755,13 @@ function Index() {
       </footer>
 
       <a
-        href={WHATSAPP_URL}
+        href={whatsappContactUrl(site.whatsapp)}
         target="_blank"
         rel="noreferrer"
         aria-label="Falar no WhatsApp"
         className="floating-whatsapp"
       >
-        <MessageCircle className="size-6" />
+        <WhatsAppIcon className="size-6" aria-hidden="true" />
       </a>
     </main>
   );

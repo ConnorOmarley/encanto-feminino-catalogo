@@ -1,13 +1,6 @@
 import { useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  MessageCircle,
-  Share2,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Share2, ZoomIn, ZoomOut } from "lucide-react";
+import { WhatsAppIcon } from "@/components/brand-icons";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ProductPhoto } from "@/components/product-photo";
@@ -19,6 +12,7 @@ import {
   type Product,
 } from "@/data/catalog";
 import { productAvailability, productLink, productPhotos } from "@/lib/product-options";
+import { useBrand } from "@/lib/use-brand";
 
 export function ProductDialog({
   product,
@@ -34,6 +28,7 @@ export function ProductDialog({
   const [variantId, setVariantId] = useState("");
   const [notice, setNotice] = useState("");
   const [manualLink, setManualLink] = useState("");
+  const site = useBrand();
   const photos = productPhotos(product);
   const selectedPhoto = Math.min(photoIndex, Math.max(photos.length - 1, 0));
   const variants = product.variants ?? [];
@@ -209,8 +204,12 @@ export function ProductDialog({
             </p>
             {canOrder ? (
               <Button asChild size="lg" className="w-full">
-                <a href={whatsappUrl(product, variant)} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle aria-hidden="true" />
+                <a
+                  href={whatsappUrl(product, variant, site.whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <WhatsAppIcon className="size-4 shrink-0" aria-hidden="true" />
                   {availability === "encomenda" ? "Consultar encomenda" : "Pedir no WhatsApp"}
                 </a>
               </Button>

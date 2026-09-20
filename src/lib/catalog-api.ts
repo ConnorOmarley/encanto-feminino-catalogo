@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Product } from "@/data/catalog";
+import type { BrandSettings, Product } from "@/data/catalog";
 import { productAvailability, productPhotos, validateVariants } from "@/lib/product-options";
 import { preparePhoto } from "@/lib/prepare-photo";
 
@@ -43,6 +43,34 @@ export async function saveProduct(product: Omit<Product, "id"> & { id?: number }
       "Não foi possível salvar. Verifique sua conexão e a permissão de administradora.",
     );
   return data as Product;
+}
+
+export async function fetchBrandSettings(): Promise<Partial<BrandSettings>> {
+  if (!supabase) return {};
+  const { data, error } = await supabase
+    .from("brand_settings")
+    .select("name, whatsapp, instagram, logo")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error || !data) return {};
+  return data as BrandSettings;
+}
+
+export async function saveBrandSettings(settings: BrandSettings) {
+  if (!supabase) throw new Error("O catálogo online ainda não foi conectado.");
+  const { error } = await supabase.from("brand_settings").upsert({
+    id: 1,
+    name: settings.name.trim(),
+    whatsapp: settings.whatsapp.trim(),
+    instagram: settings.instagram.replace(/^@/, "").trim(),
+    logo: settings.logo.trim(),
+    updated_at: new Date().toISOString(),
+  });
+  if (error)
+    throw new Error(
+      "Não foi possível salvar os ajustes. Verifique sua conexão e a permissão de administradora.",
+    );
+  return settings;
 }
 
 export async function uploadPhoto(file: File) {
