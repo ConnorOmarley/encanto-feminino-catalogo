@@ -34,7 +34,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
@@ -77,27 +77,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Encanto Feminino | Boutique Feminina" },
+      { title: "Encanto Feminino | Lingeries, pijamas e sabonetes" },
       {
         name: "description",
         content:
-          "Boutique feminina com atendimento personalizado no WhatsApp, peças selecionadas e experiência de compra elegante.",
+          "Lingeries, pijamas e sabonetes artesanais. Consulte o catálogo e faça seu pedido pelo WhatsApp.",
       },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Encanto Feminino | Boutique Feminina" },
+      { name: "author", content: "Encanto Feminino" },
+      { property: "og:title", content: "Encanto Feminino | Lingeries, pijamas e sabonetes" },
       {
         property: "og:description",
-        content:
-          "Curadoria premium de moda feminina com atendimento humano e foco em conversão via WhatsApp.",
+        content: "Conheça os produtos da Encanto Feminino e consulte a disponibilidade.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "/" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Encanto Feminino | Boutique Feminina" },
+      { name: "twitter:title", content: "Encanto Feminino | Lingeries, pijamas e sabonetes" },
       {
         name: "twitter:description",
-        content:
-          "Peças femininas selecionadas, visual sofisticado e atendimento boutique pelo WhatsApp.",
+        content: "Lingeries, pijamas e sabonetes artesanais com atendimento pelo WhatsApp.",
       },
     ],
     links: [

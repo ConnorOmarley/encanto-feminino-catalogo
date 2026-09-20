@@ -1,4 +1,15 @@
 import type { ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  brand,
+  products as initialProducts,
+  categories,
+  availabilityLabels,
+  formatPrice,
+  whatsappUrl,
+  type Product,
+} from "@/data/catalog";
+import { fetchProducts, supabase } from "@/lib/catalog-api";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -17,18 +28,15 @@ import {
   Star,
 } from "lucide-react";
 
-import heroImage from "@/assets/feminine-boutique-hero.jpg";
-import detailImage from "@/assets/feminine-boutique-detail.jpg";
-import lookVestido from "@/assets/look-vestido.jpg";
-import lookConjunto from "@/assets/look-conjunto.jpg";
-import lookBlusa from "@/assets/look-blusa.jpg";
-import lookJeans from "@/assets/look-jeans.jpg";
-import lookFesta from "@/assets/look-festa.jpg";
+const heroImage = "/catalog/product-2.webp";
+const lookVestido = "/catalog/product-1.png";
+const lookConjunto = "/catalog/product-3.webp";
+const lookBlusa = "/catalog/product-4.webp";
 import { Button } from "@/components/ui/button";
 
 const WHATSAPP_NUMBER = "5511999999999";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Olá! Vim pelo site e quero atendimento personalizado para escolher minhas peças.")}`;
-const INSTAGRAM_URL = "https://instagram.com/encantofeminino.demo";
+const INSTAGRAM_URL = "https://instagram.com/_encantofeminino_01";
 
 const trustItems = [
   { icon: HandHeart, label: "Curadoria cuidadosa" },
@@ -57,51 +65,6 @@ const highlights = [
     icon: Check,
     title: "Compra simples",
     text: "Você fala com a marca, tira dúvidas e finaliza seu pedido com atendimento direto e rápido.",
-  },
-];
-
-const products = [
-  {
-    category: "Vestidos",
-    name: "Vestido Rosé Atelier",
-    price: "R$ 189",
-    image: lookVestido,
-    alt: "Vestido rosé elegante em estilo boutique",
-  },
-  {
-    category: "Conjuntos",
-    name: "Conjunto Nude Essenza",
-    price: "R$ 229",
-    image: lookConjunto,
-    alt: "Conjunto nude sofisticado com alfaiataria feminina",
-  },
-  {
-    category: "Blusas",
-    name: "Blusa Vinho Première",
-    price: "R$ 129",
-    image: lookBlusa,
-    alt: "Blusa vinho suave com modelagem refinada",
-  },
-  {
-    category: "Jeans",
-    name: "Jeans Casual Lumière",
-    price: "R$ 159",
-    image: lookJeans,
-    alt: "Look casual com jeans feminino e camisa clara",
-  },
-  {
-    category: "Moda Festa",
-    name: "Vestido Festa Bordeaux",
-    price: "R$ 269",
-    image: lookFesta,
-    alt: "Vestido de festa vinho suave com caimento elegante",
-  },
-  {
-    category: "Moda Casual",
-    name: "Seleção Boutique Delicata",
-    price: "Sob consulta",
-    image: detailImage,
-    alt: "Detalhes premium de tecido, renda e embalagem boutique",
   },
 ];
 
@@ -152,8 +115,7 @@ const faqs = [
   },
   {
     question: "Quais formas de pagamento?",
-    answer:
-      "As formas disponíveis são informadas no atendimento antes da confirmação do pedido.",
+    answer: "As formas disponíveis são informadas no atendimento antes da confirmação do pedido.",
   },
 ];
 
@@ -182,7 +144,10 @@ export const Route = createFileRoute("/")({
       },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [
+      { rel: "canonical", href: "/" },
+      { rel: "icon", href: brand.logo },
+    ],
   }),
   component: Index,
 });
@@ -191,14 +156,16 @@ function WhatsAppButton({
   className,
   children,
   variant = "default",
+  product,
 }: {
+  product?: Product;
   className?: string;
   children: ReactNode;
   variant?: "default" | "outline" | "hero" | "soft";
 }) {
   return (
     <Button asChild className={className} size="lg" variant={variant}>
-      <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+      <a href={product ? whatsappUrl(product) : WHATSAPP_URL} target="_blank" rel="noreferrer">
         <MessageCircle />
         {children}
       </a>
@@ -207,16 +174,34 @@ function WhatsAppButton({
 }
 
 function Index() {
+  const catalog = useQuery({
+    queryKey: ["products"],
+    queryFn: fetchProducts,
+    enabled: Boolean(supabase),
+    refetchInterval: 30000,
+  });
+  const products = (
+    supabase ? (catalog.isError ? [] : (catalog.data ?? [])) : initialProducts
+  ).filter((product) => product.visible);
   return (
     <main className="bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
-          <a href="#inicio" className="flex min-w-0 flex-col">
-            <span className="font-display text-xl leading-none text-foreground sm:text-2xl">
-              Encanto Feminino
-            </span>
-            <span className="mt-1 text-xs uppercase tracking-[0.28em] text-muted-foreground">
-              Boutique feminina
+          <a href="#inicio" className="flex min-w-0 items-center gap-3">
+            <img
+              src={brand.logo}
+              alt="Logo Encanto Feminino"
+              width={56}
+              height={56}
+              className="size-12 shrink-0 object-contain sm:size-14"
+            />
+            <span className="flex min-w-0 flex-col">
+              <span className="font-display text-xl leading-none text-foreground sm:text-2xl">
+                Encanto Feminino
+              </span>
+              <span className="mt-1 text-xs uppercase tracking-[0.28em] text-muted-foreground">
+                Boutique feminina
+              </span>
             </span>
           </a>
 
@@ -250,9 +235,8 @@ function Index() {
               Elegância feminina pensada para encantar em cada detalhe.
             </h1>
             <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
-              Uma boutique premium com curadoria delicada, peças selecionadas e atendimento
-              humano pelo WhatsApp para ajudar você a escolher com segurança, conforto e
-              exclusividade.
+              Uma boutique premium com curadoria delicada, peças selecionadas e atendimento humano
+              pelo WhatsApp para ajudar você a escolher com segurança, conforto e exclusividade.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -282,7 +266,7 @@ function Index() {
             <div className="hero-visual">
               <img
                 src={heroImage}
-                alt="Moda feminina elegante em ambiente de boutique premium"
+                alt="Camisola de renda da Encanto Feminino"
                 width={1536}
                 height={1920}
                 className="h-full w-full object-cover"
@@ -348,22 +332,39 @@ function Index() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            {["Vestidos", "Conjuntos", "Blusas", "Jeans", "Moda Casual", "Moda Festa"].map(
-              (tag) => (
+            {Object.entries(categories)
+              .filter(([key]) => key !== "todos")
+              .map(([, label]) => label)
+              .map((tag) => (
                 <span key={tag} className="category-pill">
                   {tag}
                 </span>
-              ),
-            )}
+              ))}
           </div>
 
+          {supabase && catalog.isPending && (
+            <p role="status" className="mt-8">
+              Carregando coleção…
+            </p>
+          )}
+          {supabase && catalog.isError && (
+            <div role="alert" className="mt-8">
+              <p>Não foi possível consultar a disponibilidade agora.</p>
+              <Button className="mt-3" onClick={() => catalog.refetch()}>
+                Tentar novamente
+              </Button>
+            </div>
+          )}
+          {!products.length && (!supabase || (!catalog.isPending && !catalog.isError)) && (
+            <p className="mt-8">Nossa coleção está sendo atualizada. Fale conosco pelo WhatsApp.</p>
+          )}
           <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {products.map((product) => (
               <article key={product.name} className="product-card">
                 <div className="product-image-wrap">
                   <img
                     src={product.image}
-                    alt={product.alt}
+                    alt={product.name}
                     width={1200}
                     height={1504}
                     loading="lazy"
@@ -372,21 +373,29 @@ function Index() {
                 </div>
                 <div className="p-6">
                   <p className="text-xs uppercase tracking-[0.28em] text-accent-foreground/70">
-                    {product.category}
+                    {categories[product.category]}
                   </p>
                   <h3 className="mt-3 font-display text-3xl leading-none text-foreground">
                     {product.name}
                   </h3>
                   <div className="mt-4 flex items-end justify-between gap-4">
-                    <p className="text-xl font-medium text-foreground">{product.price}</p>
+                    <p className="text-xl font-medium text-foreground">
+                      {formatPrice(product.price)}
+                    </p>
                     <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                      Atendimento boutique
+                      {availabilityLabels[product.availability]}
                       <ChevronRight className="size-4" />
                     </span>
                   </div>
-                  <WhatsAppButton className="mt-6 w-full" variant="outline">
-                    Solicitar no WhatsApp
-                  </WhatsAppButton>
+                  {product.availability === "indisponivel" ? (
+                    <Button className="mt-6 w-full" size="lg" disabled>
+                      Indisponível no momento
+                    </Button>
+                  ) : (
+                    <WhatsAppButton product={product} className="mt-6 w-full" variant="outline">
+                      Solicitar no WhatsApp
+                    </WhatsAppButton>
+                  )}
                 </div>
               </article>
             ))}
@@ -421,7 +430,9 @@ function Index() {
       <section id="depoimentos" className="section-shell section-testimonials">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="section-kicker section-kicker-center">Depoimentos</span>
+            <span className="section-kicker section-kicker-center">
+              Depoimentos · exemplos do modelo
+            </span>
             <h2 className="mt-4 font-display text-4xl leading-tight text-foreground sm:text-5xl">
               Experiências que reforçam confiança antes mesmo da compra.
             </h2>
@@ -510,8 +521,8 @@ function Index() {
           <div>
             <p className="font-display text-3xl text-foreground">Encanto Feminino</p>
             <p className="mt-3 max-w-sm text-sm leading-7 text-muted-foreground">
-              Boutique feminina com seleção cuidadosa, estética delicada e atendimento pensado
-              para converter com proximidade.
+              Boutique feminina com seleção cuidadosa, estética delicada e atendimento pensado para
+              converter com proximidade.
             </p>
           </div>
           <div>
@@ -530,7 +541,7 @@ function Index() {
                 WhatsApp: (11) 99999-9999
               </a>
               <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
-                Instagram: @encantofeminino.demo
+                Instagram: @_encantofeminino_01
               </a>
               <span className="inline-flex items-center gap-2 text-muted-foreground">
                 <MapPin className="size-4" /> Atendimento online e sob consulta
