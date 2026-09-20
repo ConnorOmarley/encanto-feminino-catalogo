@@ -46,6 +46,10 @@ O acesso de edição depende da tabela `catalog_admins`. Uma conta autenticada q
 - Validar login autorizado e bloqueio de uma conta sem permissão.
 - Salvar uma alteração pelo painel e confirmar o resultado em outro navegador sem login.
 - Conferir upload de imagem, item oculto e os três status de disponibilidade.
-- Publicar pelo fluxo já usado no Lovable. Nenhuma publicação ou alteração de histórico Git foi feita nesta etapa.
+- Publicar pelo fluxo já usado no Lovable. Nenhuma publicação ou reescrita de histórico Git foi feita nesta etapa.
 
 Referências da integração: https://supabase.com/docs/guides/database/postgres/row-level-security e https://supabase.com/docs/guides/storage/security/access-control.
+
+## Navegação da coleção
+
+As categorias filtram a coleção e mostram a quantidade de produtos visíveis. A busca ignora acentos e pode ser combinada com categoria e disponibilidade. “Limpar filtros” retorna à coleção completa. Cada produto tem detalhes expansíveis com descrição, tamanhos e opções. O menu no celular dá acesso às seções sem mudar o layout do modelo.

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   brand,
@@ -8,6 +8,8 @@ import {
   formatPrice,
   whatsappUrl,
   type Product,
+  type Category,
+  type Availability,
 } from "@/data/catalog";
 import { fetchProducts, supabase } from "@/lib/catalog-api";
 import { createFileRoute } from "@tanstack/react-router";
@@ -22,7 +24,9 @@ import {
   MapPin,
   MessageCircle,
   PackageCheck,
-  Scissors,
+  Menu,
+  X,
+  Search,
   ShieldCheck,
   Sparkles,
   Star,
@@ -174,6 +178,20 @@ function WhatsAppButton({
 }
 
 function Index() {
+  const [category, setCategory] = useState<Category>("todos");
+  const [availability, setAvailability] = useState<Availability | "todos">("todos");
+  const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const clearFilters = () => {
+    setCategory("todos");
+    setAvailability("todos");
+    setSearch("");
+  };
+  const normalize = (text: string) =>
+    text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLocaleLowerCase("pt-BR");
   const catalog = useQuery({
     queryKey: ["products"],
     queryFn: fetchProducts,
@@ -183,8 +201,19 @@ function Index() {
   const products = (
     supabase ? (catalog.isError ? [] : (catalog.data ?? [])) : initialProducts
   ).filter((product) => product.visible);
+  const filteredProducts = products.filter(
+    (product) =>
+      (category === "todos" || product.category === category) &&
+      (availability === "todos" || product.availability === availability) &&
+      normalize(product.name + " " + product.description).includes(normalize(search.trim())),
+  );
+  const catalogReady = !supabase || (!catalog.isPending && !catalog.isError);
+  const hasFilters = category !== "todos" || availability !== "todos" || Boolean(search);
   return (
     <main className="bg-background text-foreground">
+      <a href="#colecao" className="skip-to-catalog">
+        Pular para a coleção
+      </a>
       <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-6 lg:px-8">
           <a href="#inicio" className="flex min-w-0 items-center gap-3">
@@ -205,7 +234,10 @@ function Index() {
             </span>
           </a>
 
-          <nav className="hidden items-center gap-6 text-sm text-muted-foreground lg:flex">
+          <nav
+            aria-label="Navegação principal"
+            className="hidden items-center gap-6 text-sm text-muted-foreground lg:flex"
+          >
             <a href="#inicio" className="transition-colors hover:text-foreground">
               Início
             </a>
@@ -224,7 +256,48 @@ function Index() {
           </nav>
 
           <WhatsAppButton className="hidden sm:inline-flex">WhatsApp</WhatsAppButton>
+          <button
+            type="button"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border lg:hidden"
+            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+          </button>
         </div>
+        {menuOpen && (
+          <nav
+            id="mobile-navigation"
+            aria-label="Navegação no celular"
+            className="border-t border-border px-4 py-3 lg:hidden"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setMenuOpen(false);
+                document
+                  .querySelector<HTMLButtonElement>('[aria-controls="mobile-navigation"]')
+                  ?.focus();
+              }
+            }}
+          >
+            {[
+              ["#inicio", "Início"],
+              ["#colecao", "Coleção"],
+              ["#como-comprar", "Como comprar"],
+              ["#faq", "Dúvidas frequentes"],
+            ].map(([href, label]) => (
+              <a
+                key={href}
+                href={href}
+                className="block rounded-lg px-3 py-3 text-sm hover:bg-secondary"
+                onClick={() => setMenuOpen(false)}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
       </header>
 
       <section id="inicio" className="hero-shell border-b border-border/60">
@@ -331,16 +404,72 @@ function Index() {
             <WhatsAppButton variant="soft">Solicitar atendimento</WhatsAppButton>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            {Object.entries(categories)
-              .filter(([key]) => key !== "todos")
-              .map(([, label]) => label)
-              .map((tag) => (
-                <span key={tag} className="category-pill">
-                  {tag}
+          <div
+            className="mt-8 flex flex-wrap gap-3"
+            role="group"
+            aria-label="Categorias da coleção"
+          >
+            {Object.entries(categories).map(([key, label]) => (
+              <button
+                type="button"
+                key={key}
+                className="category-pill collection-category"
+                aria-pressed={category === key}
+                aria-controls="collection-products"
+                onClick={() => setCategory(key as Category)}
+              >
+                {label}
+                <span className="category-count">
+                  {key === "todos"
+                    ? products.length
+                    : products.filter((product) => product.category === key).length}
                 </span>
-              ))}
+              </button>
+            ))}
           </div>
+          <div className="collection-tools">
+            <label className="collection-search">
+              <Search className="size-4 shrink-0" aria-hidden="true" />
+              <span className="sr-only">Buscar na coleção</span>
+              <input
+                type="search"
+                placeholder="Buscar uma peça ou sabonete"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </label>
+            <label className="collection-availability">
+              <span className="sr-only">Disponibilidade</span>
+              <select
+                value={availability}
+                onChange={(event) => setAvailability(event.target.value as Availability | "todos")}
+              >
+                <option value="todos">Todas as disponibilidades</option>
+                {Object.entries(availabilityLabels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {catalogReady && (
+            <div className="mt-5 flex min-h-11 flex-wrap items-center justify-between gap-2">
+              <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
+                {filteredProducts.length}{" "}
+                {filteredProducts.length === 1 ? "produto encontrado" : "produtos encontrados"}
+              </p>
+              {hasFilters && (
+                <button
+                  type="button"
+                  className="min-h-11 px-2 text-sm text-primary underline underline-offset-4"
+                  onClick={clearFilters}
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+          )}
 
           {supabase && catalog.isPending && (
             <p role="status" className="mt-8">
@@ -358,34 +487,72 @@ function Index() {
           {!products.length && (!supabase || (!catalog.isPending && !catalog.isError)) && (
             <p className="mt-8">Nossa coleção está sendo atualizada. Fale conosco pelo WhatsApp.</p>
           )}
-          <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {products.map((product) => (
-              <article key={product.name} className="product-card">
-                <div className="product-image-wrap">
+          {catalogReady && products.length > 0 && filteredProducts.length === 0 && (
+            <div className="collection-empty">
+              <Search className="mx-auto mb-4 size-7" aria-hidden="true" />
+              <h3 className="font-display text-3xl">Nenhum produto com essa combinação.</h3>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Experimente outra categoria ou limpe os filtros para ver a coleção completa.
+              </p>
+            </div>
+          )}
+          <div
+            id="collection-products"
+            className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3"
+            aria-busy={Boolean(supabase && catalog.isPending)}
+          >
+            {filteredProducts.map((product) => (
+              <article key={product.id} className="product-card collection-card">
+                <div className="product-image-wrap relative">
+                  <span className={`stock-label stock-${product.availability}`}>
+                    {availabilityLabels[product.availability]}
+                  </span>
                   <img
                     src={product.image}
                     alt={product.name}
                     width={1200}
                     height={1504}
                     loading="lazy"
-                    className="product-image"
+                    className="product-image collection-product-photo"
                   />
                 </div>
-                <div className="p-6">
+                <div className="flex flex-1 flex-col p-6">
                   <p className="text-xs uppercase tracking-[0.28em] text-accent-foreground/70">
                     {categories[product.category]}
                   </p>
                   <h3 className="mt-3 font-display text-3xl leading-none text-foreground">
                     {product.name}
                   </h3>
-                  <div className="mt-4 flex items-end justify-between gap-4">
+                  <details className="product-details">
+                    <summary>
+                      Detalhes do produto
+                      <ChevronRight className="size-4" aria-hidden="true" />
+                    </summary>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                      {product.description}
+                    </p>
+                    {product.sizes.length > 0 && (
+                      <p className="mt-3 text-sm">
+                        <span className="font-medium">Tamanhos:</span> {product.sizes.join(" · ")}
+                      </p>
+                    )}
+                    {product.colors.length > 0 && (
+                      <p className="mt-2 text-sm">
+                        <span className="font-medium">
+                          {product.category === "sabonete" ? "Opções:" : "Cores:"}
+                        </span>{" "}
+                        {product.colors.join(" · ")}
+                      </p>
+                    )}
+                    <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                      Confirme as opções e o prazo pelo WhatsApp.
+                    </p>
+                  </details>
+                  <div className="mt-auto flex items-end justify-between gap-4 pt-5">
                     <p className="text-xl font-medium text-foreground">
                       {formatPrice(product.price)}
                     </p>
-                    <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-                      {availabilityLabels[product.availability]}
-                      <ChevronRight className="size-4" />
-                    </span>
+                    <span className="text-sm text-muted-foreground">/ {product.unit}</span>
                   </div>
                   {product.availability === "indisponivel" ? (
                     <Button className="mt-6 w-full" size="lg" disabled>
@@ -393,7 +560,9 @@ function Index() {
                     </Button>
                   ) : (
                     <WhatsAppButton product={product} className="mt-6 w-full" variant="outline">
-                      Solicitar no WhatsApp
+                      {product.availability === "encomenda"
+                        ? "Consultar encomenda"
+                        : "Pedir no WhatsApp"}
                     </WhatsAppButton>
                   )}
                 </div>
