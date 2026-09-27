@@ -9,7 +9,7 @@ create table public.brand_settings (
 );
 
 insert into public.brand_settings (id, name, whatsapp, instagram, logo)
-values (1, 'Encanto Feminino', '5511999999999', 'encantofeminino.demo', '/catalog/logo.png');
+values (1, 'Encanto Feminino', '5511999999999', 'encantofeminino.demo', '/catalog/logo.svg');
 
 alter table public.brand_settings enable row level security;
 revoke all on public.brand_settings from anon, authenticated;

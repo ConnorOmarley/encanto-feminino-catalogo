@@ -3,7 +3,7 @@ import { productMessage, type ProductVariant } from "../lib/product-options";
 
 export const brand = {
   name: "Encanto Feminino",
-  logo: "/catalog/logo.png",
+  logo: "/catalog/logo.svg",
   socialImage:
     "/catalog/logo.svg",
   whatsapp: "5511999999999",

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Marca">
+  <defs>
+    <linearGradient id="petal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8a0b4"/>
+      <stop offset="100%" stop-color="#c96a86"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#petal)">
+    <ellipse cx="60" cy="34" rx="11" ry="22"/>
+    <ellipse cx="60" cy="34" rx="11" ry="22" transform="rotate(72 60 60)"/>
+    <ellipse cx="60" cy="34" rx="11" ry="22" transform="rotate(144 60 60)"/>
+    <ellipse cx="60" cy="34" rx="11" ry="22" transform="rotate(216 60 60)"/>
+    <ellipse cx="60" cy="34" rx="11" ry="22" transform="rotate(288 60 60)"/>
+  </g>
+  <circle cx="60" cy="60" r="9" fill="#f6d9e2"/>
+  <path d="M60 78c0 0 12 10 12 20a12 12 0 0 1-24 0c0-10 12-20 12-20z" fill="#7fa77a" opacity=".85"/>
+</svg>

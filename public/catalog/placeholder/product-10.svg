@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Calcinha Normal">
+  <rect width="1200" height="600" fill="#e6e1ec"/>
+  <g fill="none" stroke="#9d8bb0" stroke-width="2" opacity=".35">
+    <circle cx="600" cy="250" r="110"/>
+  </g>
+  <text x="600" y="235" text-anchor="middle" font-family="Georgia, serif" font-size="42" fill="#9d8bb0"><tspan x="600" y="300">Calcinha Normal</tspan></text>
+  <text x="600" y="430" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" fill="#9d8bb0" opacity=".7">imagem de demonstracao</text>
+  <text x="600" y="466" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" fill="#9d8bb0" opacity=".5">product-10</text>
+</svg>

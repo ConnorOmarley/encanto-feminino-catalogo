@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-label="Macaquito Suede">
+  <rect width="1200" height="600" fill="#f0dfe4"/>
+  <g fill="none" stroke="#c08a9c" stroke-width="2" opacity=".35">
+    <circle cx="600" cy="250" r="110"/>
+  </g>
+  <text x="600" y="235" text-anchor="middle" font-family="Georgia, serif" font-size="42" fill="#c08a9c"><tspan x="600" y="300">Macaquito Suede</tspan></text>
+  <text x="600" y="430" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" fill="#c08a9c" opacity=".7">imagem de demonstracao</text>
+  <text x="600" y="466" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" fill="#c08a9c" opacity=".5">product-6</text>
+</svg>
